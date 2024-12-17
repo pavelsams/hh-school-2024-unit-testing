@@ -117,4 +117,21 @@ public class LibraryManagerTest {
     );
     assertEquals("Overdue days cannot be negative.", exception.getMessage());
   }
+
+  @Test
+  void testBorrowSameBookTwoUsersThenReturn() {
+    when(userService.isUserActive("Petr")).thenReturn(true);
+    assertTrue(libraryManager.borrowBook("book2", "Petr"));
+    assertEquals(2, libraryManager.getAvailableCopies("book2"));
+
+    when(userService.isUserActive("Pasha")).thenReturn(true);
+    assertTrue(libraryManager.borrowBook("book2", "Pasha"));
+    assertEquals(1, libraryManager.getAvailableCopies("book2"));
+
+    assertTrue(libraryManager.returnBook("book2", "Petr"));
+    assertEquals(2, libraryManager.getAvailableCopies("book2"));
+
+    assertTrue(libraryManager.returnBook("book2", "Pasha"));
+    assertEquals(3, libraryManager.getAvailableCopies("book2"));
+  }
 }
