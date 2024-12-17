@@ -2,8 +2,7 @@ package ru.hh.school.unittesting.homework;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class LibraryManager {
 
@@ -15,7 +14,7 @@ public class LibraryManager {
   private final UserService userService;
 
   private final Map<String, Integer> bookInventory = new HashMap<>();
-  private final Map<String, String> borrowedBooks = new HashMap<>();
+  private final Map<String, Set<String>> borrowedBooks = new HashMap<>();
 
   public LibraryManager(NotificationService notificationService, UserService userService) {
     this.notificationService = notificationService;
@@ -38,18 +37,38 @@ public class LibraryManager {
     }
 
     bookInventory.put(bookId, availableCopies - 1);
-    borrowedBooks.put(bookId, userId);
+
+    Set<String> borrowedUsers;
+    if (borrowedBooks.containsKey(bookId)) {
+      borrowedUsers = borrowedBooks.get(bookId);
+      borrowedUsers.add(userId);
+    } else {
+      borrowedUsers = new HashSet<>();
+      borrowedUsers.add(userId);
+      borrowedBooks.put(bookId, borrowedUsers);
+    }
+
     notificationService.notifyUser(userId, "You have borrowed the book: " + bookId);
     return true;
   }
 
   public boolean returnBook(String bookId, String userId) {
-    if (!borrowedBooks.containsKey(bookId) || !borrowedBooks.get(bookId).equals(userId)) {
+    if (!borrowedBooks.containsKey(bookId)) {
+      return false;
+    }
+
+    Set<String> borrowedUsers = borrowedBooks.get(bookId);
+    if (!borrowedUsers.contains(userId)) {
       return false;
     }
 
     bookInventory.put(bookId, bookInventory.getOrDefault(bookId, 0) + 1);
-    borrowedBooks.remove(bookId);
+    if (borrowedUsers.size() == 1) {
+      borrowedBooks.remove(bookId);
+    } else {
+      borrowedUsers.remove(userId);
+    }
+
     notificationService.notifyUser(userId, "You have returned the book: " + bookId);
     return true;
   }
